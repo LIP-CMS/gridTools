@@ -16,7 +16,7 @@ Author: Pietro Vischia, pietro.vischia@gmail.com
 # Python 2.7: from argparse import ArgumentParser
 from optparse import OptionParser
 # Python 2.7: parser = OptionParser(description='This script copies recursively a local directory to a Tier2/3 (for now, only T2_PT_NCG_Lisbon)')
-parser = OptionParser(description='This script copies recursively a local directory to a Tier2/3 (for now, only T2_PT_NCG_Lisbon)')
+parser = OptionParser(description='This script copies recursively a local directory to a Tier2/3 (for now, only T2_PT_NCG_Lisbon). CHECK THE COPIED FILES BEFORE DELETING THE SOURCE ONES. IT IS FULLY YOUR RESPONSIBILITY')
 
 parser.add_option("-u", "--username", dest="username", help="username (will be used for creating the final path in the storage area)")
 parser.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
