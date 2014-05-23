@@ -1,0 +1,25 @@
+# no emacs temp files
+*~
+# no tables files
+*.tex
+*.aux
+*.log
+*.pdf
+# no plots
+*.png
+# no transient compressed archives
+*.tar.gz
+# No autodict files
+AutoDict*
+# no python compiled files:
+*pyc
+# no python init file
+python/__init__.py
+# No root files
+*.root
+# No output ascii files or input files
+*.asc
+# No root nor C++ libraries
+*.d
+*.so
+*.o
