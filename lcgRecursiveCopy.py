@@ -22,6 +22,8 @@ parser.add_option("-u", "--username", dest="username", help="username (will be u
 parser.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
 parser.add_option("-o", "--output",   dest="output",   help='destination directory: it is assumed to be specified as a relative path starting from AFTER /cmst3/store/user/, meaning that "-u bulabula -o storage/testes4" will become "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/bulabula/storage/testes4/"')
 parser.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', default="false")
+parser.add_option("-r", "--remove",   dest="remove",   help='Remove the directory object of the -o option', default="false")
+
 
 
 # Python 2.7: args = parser.parse_args()
@@ -30,11 +32,18 @@ if not options.username:
     parser.print_help()
     parser.error("No username provided")
 if not options.input:
-    parser.print_help()
-    parser.error("No input directory provided")
+    if not options.remove:
+        parser.print_help()
+        parser.error("No input directory provided")
+    else:
+        parser.print_help()
+        parser.error("You gave an input local directory AND told me to remove the output directory. Please make up your mind!")
 if not options.output:
     parser.print_help()
-    parser.error("No output directory provided")
+    if not options.remove:
+        parser.error("No output directory provided")
+    else:
+        parser.error("Directory to be removed not provided")
 if not options.dryrun:
     print "You did not enable dry run: you are on your own, bitch!"
 
@@ -81,12 +90,15 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
     destPath=tier+username+"/"+relDestPath
 
     for i in range(len(files)):
-        cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'+' &'
-        if options.dryrun:
-            print cmd
+        if not options.remove:
+            cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'+' &'
+            if options.dryrun:
+                print cmd
+            else:
+                os.system(cmd) 
         else:
-            os.system(cmd) 
-        
+            print "REMOVAL NOT FULLY IMPLEMENTED YET"
+            
 # Main
 if len(sys.argv) == 0:
     print "Usage: " + sys.argv[0] + " /path/to/input/directory " + " relative/path/to/Destination"
@@ -101,9 +113,12 @@ if sys.argv[1] == "--help":
 #outDir=args.output
 
 print "Username: " + options.username
-print "Source directory: " + options.input
-print "Destination directory: " + options.output
-
+if not options.remove:
+    print "Source directory: " + options.input
+    print "Destination directory: " + options.output
+else:
+    print "Directory that will be removed: " + options.output
+    
 listFiles = []
 listFilesWithPath = []
 listFiles, listFilesWithPath=buildRecursiveDirTree(options.input)
