@@ -21,6 +21,8 @@ parser = OptionParser(description='This script copies recursively a local direct
 parser.add_option("-u", "--username", dest="username", help="username (will be used for creating the final path in the storage area)")
 parser.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
 parser.add_option("-o", "--output",   dest="output",   help='destination directory: it is assumed to be specified as a relative path starting from AFTER /cmst3/store/user/, meaning that "-u bulabula -o storage/testes4" will become "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/bulabula/storage/testes4/"')
+parser.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', default="false")
+
 
 # Python 2.7: args = parser.parse_args()
 (options, args) = parser.parse_args()
@@ -33,7 +35,8 @@ if not options.input:
 if not options.output:
     parser.print_help()
     parser.error("No output directory provided")
-
+if not options.dryrun:
+    print "You did not enable dry run: you are on your own, bitch!"
 
 def selectFiles(root, files, path):
 
@@ -79,7 +82,10 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
 
     for i in range(len(files)):
         cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'+' &'
-        os.system(cmd) 
+        if options.dryrun:
+            print cmd
+        else:
+            os.system(cmd) 
         
 # Main
 if len(sys.argv) == 0:
