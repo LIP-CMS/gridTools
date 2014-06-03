@@ -3,6 +3,9 @@ from os.path import splitext, join
 
 import os,sys
 
+import subprocess
+
+
 """
 lcgRecursiveCopy.py
 -------------------
@@ -21,7 +24,7 @@ parser = OptionParser(description='This script copies recursively a local direct
 parser.add_option("-u", "--username", dest="username", help="username (will be used for creating the final path in the storage area)")
 parser.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
 parser.add_option("-o", "--output",   dest="output",   help='destination directory: it is assumed to be specified as a relative path starting from AFTER /cmst3/store/user/, meaning that "-u bulabula -o storage/testes4" will become "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/bulabula/storage/testes4/"')
-parser.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', default="false")
+parser.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', action="store_true")
 parser.add_option("-r", "--remove",   dest="remove",   help='Remove the directory object of the -o option', default="false")
 
 
@@ -74,6 +77,13 @@ def buildRecursiveDirTree(path):
     """
     selectedFiles = []
     selectedFilesWithPath = []
+
+    if options.remove:
+        print "Do the deed of manipulating the shit"
+        lustrePath="/lustre/ncg.ingrid.pt/cmst3/store/user/"+options.username+"/"+path
+        print "New path: " + lustrePath
+        path=lustrePath
+        
     for root, dirs, files in walk(path):
         result = selectFiles(root,files,path)
         selectedFiles += result['files']
@@ -89,6 +99,7 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
     tier="srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/"
     destPath=tier+username+"/"+relDestPath
 
+
     for i in range(len(files)):
         if not options.remove:
             cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'+' &'
@@ -97,8 +108,18 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
             else:
                 os.system(cmd) 
         else:
-            print "REMOVAL NOT FULLY IMPLEMENTED YET"
-            
+            filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
+            print "File that will be removed: " + filesWithPath[i]
+            cmd='ls'
+            #'lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
+            if options.dryrun:
+                print cmd
+                #print os.system("whoami")
+                meis = subprocess.Popen("whoami")
+                #print meis
+                # Python 2.7: subprocess.check_output(["whoami",""])
+                 
+   
 # Main
 if len(sys.argv) == 0:
     print "Usage: " + sys.argv[0] + " /path/to/input/directory " + " relative/path/to/Destination"
@@ -121,6 +142,9 @@ else:
     
 listFiles = []
 listFilesWithPath = []
-listFiles, listFilesWithPath=buildRecursiveDirTree(options.input)
+if not options.remove:
+    listFiles, listFilesWithPath=buildRecursiveDirTree(options.input)
+else:
+    listFiles, listFilesWithPath=buildRecursiveDirTree(options.output)
 print listFilesWithPath
 lcgCopyDirTree(options.username,options.output,listFiles,listFilesWithPath)
