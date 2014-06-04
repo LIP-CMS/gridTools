@@ -1,9 +1,8 @@
 from os import walk
 from os.path import splitext, join
-
 import os,sys
-
 import subprocess
+import hashlib
 
 
 """
@@ -25,8 +24,8 @@ parser.add_option("-u", "--username", dest="username", help="username (will be u
 parser.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
 parser.add_option("-o", "--output",   dest="output",   help='destination directory: it is assumed to be specified as a relative path starting from AFTER /cmst3/store/user/, meaning that "-u bulabula -o storage/testes4" will become "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/bulabula/storage/testes4/"')
 parser.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', action="store_true")
-parser.add_option("-r", "--remove",   dest="remove",   help='Remove the directory object of the -o option', default="false")
-
+parser.add_option("-r", "--remove",   dest="remove",   help='Remove the directory object of the -o option', action="store_true")
+parser.add_option("-v", "--verbose",  dest="debug",    help='Activate debug mode (verbose printing)',       action="store_true")
 
 
 # Python 2.7: args = parser.parse_args()
@@ -49,7 +48,19 @@ if not options.output:
         parser.error("Directory to be removed not provided")
 if not options.dryrun:
     print "You did not enable dry run: you are on your own, bitch!"
+else:
+    print "This is a dry run"
 
+
+def hashFile(filename, blocksize=65536):
+    # hash = hashlib.md5()
+    hash = hashlib.sha256()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), ""):
+            hash.update(block)
+    return hash.hexdigest()
+
+    
 def selectFiles(root, files, path):
 
     selectedFiles = []
@@ -64,10 +75,12 @@ def selectFiles(root, files, path):
         #        if ext == ".py":
         #            selected_files.append(full_path)
         selectedFilesWithPath.append(fullPath)
-        print fullPath
-        print "PATH IS " + path
+        if(options.debug):
+            print fullPath
+            print "PATH IS " + path
         fullPath = fullPath.replace(path,'') 
-        print fullPath
+        if(options.debug):
+            print fullPath
         selectedFiles.append(fullPath)
     return {'files': selectedFiles, 'filesWithPath': selectedFilesWithPath }
 
@@ -79,9 +92,9 @@ def buildRecursiveDirTree(path):
     selectedFilesWithPath = []
 
     if options.remove:
-        print "Do the deed of manipulating the shit"
         lustrePath="/lustre/ncg.ingrid.pt/cmst3/store/user/"+options.username+"/"+path
-        print "New path: " + lustrePath
+        if(options.debug):
+            print "New path: " + lustrePath
         path=lustrePath
         
     for root, dirs, files in walk(path):
@@ -95,21 +108,32 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
     """
     Invoke lcg-cp to copy files to the desired Tier2
     """
-    print "Now copying"
+    if(options.debug):
+        print "Now copying"
     tier="srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/"
     destPath=tier+username+"/"+relDestPath
 
-
+    os.system('rm LOG')
+    os.system('touch LOG')
     for i in range(len(files)):
         if not options.remove:
-            cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'+' &'
+            cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'
             if options.dryrun:
                 print cmd
             else:
                 os.system(cmd) 
+            m1 = hashFile(filesWithPath[i])
+            fileToHash='/lustre/ncg.ingrid.pt/cmst3/store/user/'+username+'/'+relDestPath+'/'+files[i]
+            m2 = hashFile(fileToHash)
+            if(options.debug):
+                print "m1: " + m1
+                print "m2: " + m2
+            if(m1 != m2):
+                print "ERROR: file " + relDestPath+'/'+files[i] + " has been copied uncorrectly (sha256 hashes diverge)"
         else:
             filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
-            print "File that will be removed: " + filesWithPath[i]
+            if(options.debug):
+                print "File that will be removed: " + filesWithPath[i]
             cmd='ls'
             #'lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
             if options.dryrun:
@@ -146,5 +170,5 @@ if not options.remove:
     listFiles, listFilesWithPath=buildRecursiveDirTree(options.input)
 else:
     listFiles, listFilesWithPath=buildRecursiveDirTree(options.output)
-print listFilesWithPath
+# print listFilesWithPath
 lcgCopyDirTree(options.username,options.output,listFiles,listFilesWithPath)
