@@ -116,23 +116,28 @@ def lcgCopyDirTree(username, relDestPath, files, filesWithPath):
     os.system('rm LOG')
     os.system('touch LOG')
     for i in range(len(files)):
-        if not options.remove:
-            cmd='lcg-cp --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'" >> LOG'
+        if not options.remove:    
+            cmd='lcg-cp --checksum --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'"'
+            print 'CMD=' + cmd
             if options.dryrun:
                 print cmd
             else:
                 os.system(cmd) 
-                m1 = hashFile(filesWithPath[i])
+                m1=0
+                if os.path.isfile(filesWithPath[i]):
+                    m1 = hashFile(filesWithPath[i])
                 fileToHash='/lustre/ncg.ingrid.pt/cmst3/store/user/'+username+'/'+relDestPath+'/'+files[i]
-                m2 = hashFile(fileToHash)
-                if(options.debug):
-                    print "m1: " + m1
-                    print "m2: " + m2
-                if(m1 != m2):
-                    print "ERROR: file " + relDestPath+'/'+files[i] + " has been copied uncorrectly (sha256 hashes diverge)"
+                m2=0
+                if os.path.isfile(fileToHash):
+                    m2 = hashFile(fileToHash)
+                if m1 != m2:
+                    print 'ERROR: file ' + relDestPath+'/'+files[i] + ' has been copied uncorrectly (sha256 hashes diverge), m1=' + str(m1) + ', m2=' + str(m2)
+                else:
+                    print 'OK: file ' + relDestPath+'/'+files[i] + ' has been copied successfully (sha256 hashes are equal), m1=' + str(m1) + ', m2=' + str(m2)
+                sys.stdout.flush()
         else:
             filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
-            if(options.debug):
+            if options.debug:
                 print "File that will be removed: " + filesWithPath[i]
             cmd='ls'
             #'lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
