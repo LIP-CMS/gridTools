@@ -96,12 +96,12 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
             filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
             if options.debug:
                 print "File that will be removed: " + filesWithPath[i]
-            cmd='ls'
-            #'lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
+            cmd='lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
             if options.dryrun:
                 print cmd
                 #print os.system("whoami")
                 meis = subprocess.Popen("whoami")
                 #print meis
                 # Python 2.7: subprocess.check_output(["whoami",""])
-                 
+            else:
+                print cmd
