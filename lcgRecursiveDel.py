@@ -1,14 +1,12 @@
 import os
 import sys
-import subprocess
-
 
 
 """
-lcgRecursiveCopy.py
+lcgRecursiveDel.py
 -------------------
 
-Enables people to recursively copy a local directory to a Tier2/3 storage area (operation currently not supported by any grid CMS utility, apparently)
+Enables people to recursively delete a directory from a Tier2/3 storage area (operation currently not supported by any grid CMS utility, apparently)
 
 Author: Pietro Vischia, pietro.vischia@gmail.com
 """
@@ -18,13 +16,13 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 # Python 2.7: from argparse import ArgumentParser
 from optparse import OptionParser,OptionGroup
 # Python 2.7: parser = OptionParser(description='This script copies recursively a local directory to a Tier2/3 (for now, only T2_PT_NCG_Lisbon)')
-parser = OptionParser(description='This script copies recursively a local directory to a Tier2/3 (for now, only T2_PT_NCG_Lisbon). CHECK THE COPIED FILES BEFORE DELETING THE SOURCE ONES. IT IS FULLY YOUR RESPONSIBILITY')
+parser = OptionParser(description='This script deletes recursively a directory from a Tier2/3 (for now, only T2_PT_NCG_Lisbon). CHECK WITH A DRY RUN BEFORE DELETING THE FILES. IT IS FULLY YOUR RESPONSIBILITY')
 
 commonOpts = OptionGroup(parser, "Common options", "Options common to recursive copy and deletion")
 commonOpts.add_option("-u", "--username", dest="username", help="username (will be used for creating the final path in the storage area)")
 commonOpts.add_option("-d", "--dryRun",   dest="dryrun",   help='Only show the commands which will be executed', action="store_true")
 commonOpts.add_option("-v", "--verbose",  dest="debug",    help='Activate debug mode (verbose printing)',       action="store_true")
-parser.add_option_group(commonOpts)                     
+parser.add_option_group(commonOpts)
 
 copyOpts = OptionGroup(parser, "Copy options", "Options active only for recursive COPY")                  
 copyOpts.add_option("-i", "--input",    dest="input",    help="source directory (absolute local path)")
@@ -38,27 +36,23 @@ parser.add_option_group(deletionOpts)
 
 # Python 2.7: args = parser.parse_args()
 (options, args) = parser.parse_args()
+if not options.remove:
+    parser.print_help()
+    parser.error("You can't remove files without calling explicitly the option --remove")
 if not options.username:
     parser.print_help()
     parser.error("No username provided")
-if not options.input:
-    parser.print_help()
-    parser.error("No input directory provided")
 if not options.output:
     parser.print_help()
-    if not options.remove:
-        parser.error("No output directory provided")
+    parser.error("Directory to be removed not provided")
 if not options.dryrun:
     print "You did not enable dry run: you are on your own, bitch!"
 else:
     print "This is a dry run"
 
-options.remove = False
-
-
 from tools import *
 
-
+options.input = ""
    
 # Main
 if len(sys.argv) == 0:
