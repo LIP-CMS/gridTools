@@ -80,6 +80,7 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
     if options.remove:
         meis = subprocess.Popen("whoami", stdout=subprocess.PIPE)
         realuser=meis.communicate()[0]
+        realuser = realuser.replace("\n","")
         if options.username != realuser:
             unfMsg="Hi Joao, Pietro, \n This is to notify you that user " + realuser + " wants to erase Tier2 directory " + destPath  + " belonging to USER " + options.username + ". This is bad behaviour that must be cheched, in principle." 
             if options.dryrun:
@@ -91,6 +92,7 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
             msg['Subject'] = 'WARNING: user ' + realuser + ' is trying to delete files belonging to user ' + options.username 
             msg['From'] = 'pietro.vischia@gmail.com'
             msg['To'] = 'pietro.vischia@gmail.com'
+            msg['CC'] = 'joao.varela@cern.ch'
             # Send the message via our own SMTP server, but don't include the
             # envelope header.
             s = smtplib.SMTP('localhost')
