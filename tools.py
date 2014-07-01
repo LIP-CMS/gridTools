@@ -125,11 +125,14 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
             filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
             if options.debug:
                 print "File that will be removed: " + filesWithPath[i]
-            cmd='lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
-              
+            #cmd='lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
+            cmd='clientSRM Rm -e httpg://srm01.ncg.ingrid.pt:8444 -s "'+filesWithPath[i]+'" >> LOG'+' &'
+            
             if options.dryrun:
                 print cmd
                 #print os.system("whoami")
                 # Python 2.7: subprocess.check_output(["whoami",""])
             else:
-                print os.system(cmd)
+                os.system(cmd)
+                os.system("sleep 2")
+                
