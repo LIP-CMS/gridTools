@@ -51,7 +51,7 @@ def buildRecursiveDirTree(path, options):
     selectedFilesWithPath = []
 
     if options.remove:
-        lustrePath="/lustre/ncg.ingrid.pt/cmst3/store/user/"+options.username+"/"+path
+        lustrePath="/gstore/t3cms/store/user/"+options.username+"/"+path
         if(options.debug):
             print "New path: " + lustrePath
         path=lustrePath
@@ -112,7 +112,7 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
                 m1=0
                 if os.path.isfile(filesWithPath[i]):
                     m1 = hashFile(filesWithPath[i])
-                fileToHash='/lustre/ncg.ingrid.pt/cmst3/store/user/'+username+'/'+relDestPath+'/'+files[i]
+                fileToHash='/gstore/t3cms/store/user/'+username+'/'+relDestPath+'/'+files[i]
                 m2=0
                 if os.path.isfile(fileToHash):
                     m2 = hashFile(fileToHash)
@@ -122,7 +122,7 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
                     print 'OK: file ' + relDestPath+'/'+files[i] + ' has been copied successfully (sha256 hashes are equal), m1=' + str(m1) + ', m2=' + str(m2)
                     #sys.stdout.flush()
         else:
-            filesWithPath[i] = filesWithPath[i].replace("/lustre/ncg.ingrid.pt/cmst3/store/user/",tier)
+            filesWithPath[i] = filesWithPath[i].replace("/gstore/t3cms/store/user/",tier)
             if options.debug:
                 print "File that will be removed: " + filesWithPath[i]
             #cmd='lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
