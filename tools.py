@@ -22,6 +22,14 @@ def selectFiles(root, files, path, options):
 
     selectedFiles = []
     selectedFilesWithPath = []
+
+    # Remove empty directory. It is first because array is inverted later
+    selectedFilesWithPath.append(root)
+    tempPath=root
+    tempPath = tempPath.replace(path,'')
+    selectedFiles.append(tempPath)
+
+
     for file in files:
         #do concatenation here to get full path 
         fullPath = join(root, file)
@@ -39,6 +47,7 @@ def selectFiles(root, files, path, options):
         if(options.debug):
             print fullPath
         selectedFiles.append(fullPath)
+
     return {'files': selectedFiles, 'filesWithPath': selectedFilesWithPath }
 
 
@@ -76,7 +85,6 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
     os.system('rm LOG')
     os.system('touch LOG')
 
-
     if options.remove:
         meis = subprocess.Popen("whoami", stdout=subprocess.PIPE)
         realuser=meis.communicate()[0]
@@ -100,7 +108,10 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
             s.quit()
             print "REMOVING FILES BELONGING TO OTHER USERS IS NOT ALLOWED, BITCH!"
             return
-            
+
+        
+    files.reverse()    
+    filesWithPath.reverse()
     for i in range(len(files)):
         if not options.remove:    
             cmd='lcg-cp --checksum --verbose -b -D srmv2 file://'+filesWithPath[i]+' "'+destPath+'/'+files[i]+'"'
@@ -122,12 +133,16 @@ def lcgOperateOnDirTree(username, relDestPath, files, filesWithPath, options):
                     print 'OK: file ' + relDestPath+'/'+files[i] + ' has been copied successfully (sha256 hashes are equal), m1=' + str(m1) + ', m2=' + str(m2)
                     #sys.stdout.flush()
         else:
+            dormdir = os.path.isdir(filesWithPath[i])
             filesWithPath[i] = filesWithPath[i].replace("/gstore/t3cms/store/user/",tier)
             if options.debug:
                 print "File that will be removed: " + filesWithPath[i]
             #cmd='lcg-del --verbose -b -D srmv2 "'+filesWithPath[i]+'" >> LOG'+' &'
-            cmd='clientSRM Rm -e httpg://srm01.ncg.ingrid.pt:8444 -s "'+filesWithPath[i]+'" >> LOG'+' &'
-            
+            cmd=''
+            if dormdir:
+                cmd='clientSRM Rmdir -e httpg://srm01.ncg.ingrid.pt:8444 -s "'+filesWithPath[i]+'" >> LOG'+' &'
+            else:
+                cmd='clientSRM Rm -e httpg://srm01.ncg.ingrid.pt:8444 -s "'+filesWithPath[i]+'" >> LOG'+' &'
             if options.dryrun:
                 print cmd
                 #print os.system("whoami")
