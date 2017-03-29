@@ -19,34 +19,41 @@ def recursiveConsolidate(inDir, tierPath, user, basePath, dryRun=True):
     if os.path.isfile(inDir+"/"+nub):
       if verbose:
         print "  It is a file"
-      p = subprocess.Popen(['sha1sum',inDir+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      out, err = p.communicate()
-      inFileSHA = out.split()
-      p = subprocess.Popen(['sha1sum',basePath+"/"+user+"/"+tierPath+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      out, err = p.communicate()
-      outFileSHA = out.split()
-      if verbose:
-        print "    The input SHA1:", inFileSHA[0], "vs the output SHA1:", outFileSHA[0]
-      if inFileSHA[0] == outFileSHA[0]:
+      if os.path.isfile(basePath+"/"+user+"/"+tierPath+"/"+nub):
         if verbose:
-          print "    The file was correctly copied, we can delete the input file"
-        command = "rm "+inDir+"/"+nub
-        if dryRun:
-          print command
+          print "    It also exists in the output"
+        p = subprocess.Popen(['sha1sum',inDir+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        inFileSHA = out.split()
+        p = subprocess.Popen(['sha1sum',basePath+"/"+user+"/"+tierPath+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        outFileSHA = out.split()
+        if verbose:
+          print "    The input SHA1:", inFileSHA[0], "vs the output SHA1:", outFileSHA[0]
+        if inFileSHA[0] == outFileSHA[0]:
+          if verbose:
+            print "    The file was correctly copied, we can delete the input file"
+          command = "rm "+inDir+"/"+nub
+          if dryRun:
+            print command
+          else:
+            p = subprocess.Popen(['rm',inDir+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
         else:
-          p = subprocess.Popen(['rm',inDir+"/"+nub], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-          out, err = p.communicate()
+          if verbose:
+            print "    The file was not correctly copied, delete the copied file"
+          correctlyCopied = False
+          tier = "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/"
+          cmd = 'clientSRM Rm -e httpg://srm01.ncg.ingrid.pt:8444 -s "' + tier+user+"/"+tierPath+"/"+nub + '" >> LOG &'
+          if dryRun:
+            print command
+          else:
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
       else:
         if verbose:
-          print "    The file was not correctly copied, delete the copied file"
+          print "    It does not exist in the output"
         correctlyCopied = False
-        tier = "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/"
-        cmd = 'clientSRM Rm -e httpg://srm01.ncg.ingrid.pt:8444 -s "' + tier+user+"/"+tierPath+"/"+nub + '" >> LOG &'
-        if dryRun:
-          print command
-        else:
-          p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-          out, err = p.communicate()
     if os.path.isdir(inDir+"/"+nub):
       if verbose:
         print "  It is a directory"
@@ -71,6 +78,15 @@ def recursiveConsolidate(inDir, tierPath, user, basePath, dryRun=True):
 
 if __name__ == "__main__":
   import argparse
+
+  command = "echo bob | sha1sum"
+  p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  out, err = p.communicate()
+  results = out.split()
+  if len(results) != 2 or results[0] != "7b64f0f207214f9894a2f4d08a95e57f3c773e72":
+    print "You do not have a compatible sha1sum"
+    exit()
+
 
   parser = argparse.ArgumentParser(description='Process the command line options')
   parser.add_argument('-d', '--dryRun', action='store_true', help='Do a dry run (i.e. do not actually run the commands to remove the corrupt files from the output and the correctly copied files from the input)')
