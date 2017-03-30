@@ -72,7 +72,8 @@ def recursiveConsolidate(inDir, tierPath, user, basePath, dryRun=True):
       else:
         if verbose:
           print "The directory does not exist in the output, so we do not recurse"
-        correctlyCopied = False
+        if listDir(inDir+"/"+nub) != []: # Empty directories are not copied... So if it is empty, all is ok
+          correctlyCopied = False
 
   return correctlyCopied
 
